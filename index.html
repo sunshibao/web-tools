@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tools 工具箱</title>
+</head>
+<style>
+    body {
+        font-family: sans-serif;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #f0f0f0; /* 页面背景色，使白色区域更突出 */
+    }
+
+    /* 头部样式 */
+    header {
+        background-color: transparent; /* header 背景透明，以便显示子元素的背景色 */
+        border-bottom: none; /* 移除 header 的底部边框 */
+    }
+
+    .logo-bar {
+        background-color: white; /* LOGO 栏背景白色 */
+        padding: 10px 30px;
+        border-bottom: 1px solid #ccc; /* LOGO 栏底部边框 */
+    }
+
+    .menu-bar {
+        background-color: white; /* 菜单栏背景白色 */
+        padding: 10px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 菜单栏顶部阴影 */
+        border-bottom: 1px solid #ccc; /* 菜单栏底部边框 */
+    }
+
+    .logo {
+        font-size: 13em;
+        font-weight: bold;
+    }
+
+    nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    nav li {
+        margin: 0 10px;
+    }
+
+    nav a {
+        text-decoration: none;
+        color: #333;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    nav a:hover, nav a.active {
+        background-color: #008000;
+        color: white;
+    }
+
+
+    .panel-container {
+        display: flex;
+        flex-grow: 1;
+    }
+
+    .left-panel, .right-panel {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin: 5px;
+        box-sizing: border-box;
+        overflow: auto;
+    }
+
+    textarea {
+        width: calc(100% - 10px);
+        height: 300px;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        box-sizing: border-box;
+        font-family: monospace;
+    }
+
+    /* 底部样式 */
+    footer {
+        background-color: white;
+        padding: 10px;
+        text-align: center;
+        border-top: 1px solid #ccc;
+        margin-top: 20px;
+    }
+</style>
+<!-- ===================================================content style start======================================================== -->
+
+<style>
+    h1 {
+        text-align: left;
+        padding: 0px 25px; /* 为标题添加一些垂直 padding */
+    }
+
+    .container {
+        display: flex;
+        flex-grow: 1;
+        padding: 20px;
+    }
+
+    .left-panel, .right-panel {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin: 5px;
+        box-sizing: border-box;
+        overflow: auto;
+    }
+
+    textarea {
+        width: calc(100% - 10px);
+        height: 420px;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    #result {
+        white-space: pre-wrap;
+        font-family: monospace;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #ffffff;
+        overflow-x: auto;
+        height: calc(100% - 40px);
+        box-sizing: border-box;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    input[type="text"] {
+        width: calc(100% - 10px);
+        padding: 5px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        padding: 8px 16px;
+    }
+</style>
+<!-- ===================================================content style end======================================================== -->
+<body>
+
+<header>
+    <div class="logo-bar">
+        <div class="logo">Tools 工具箱</div>
+    </div>
+    <div class="menu-bar">
+        <nav>
+            <ul>
+                <li><a href="JsonToMysql.html" class="active">JSON To MySQL</a></li>
+                <li><a href="JsonToGoStruct.html">JSON To GoStruct</a></li>
+                <li><a href="MysqlToGoStruct.html">MySQL To GoStruct</a></li>
+                <li><a href="JsonToProtobuf.html">JSON To Protobuf</a></li>
+                <li><a href="XMLToJson.html">XML / JSON</a></li>
+                <li><a href="#">其他工具</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<!-- ===================================================content start======================================================== -->
+
+<h1>JSON o MySQL 建表语句生成器</h1>
+<div class="container">
+    <div class="left-panel">
+        <label for="tableName">表名:</label>
+        <input type="text" id="tableName" value="my_table"><br><br>
+
+        <label for="jsonData">JSON 数据:</label><br>
+        <textarea id="jsonData"></textarea><br>
+
+        <button onclick="generateSQL()">生成 SQL</button>
+    </div>
+    <div class="right-panel">
+        <label for="result">生成的 SQL 语句:</label><br>
+        <div id="result"></div>
+    </div>
+</div>
+
+<script>
+    function generateSQL() {
+        const tableName = document.getElementById("tableName").value;
+        const jsonData = document.getElementById("jsonData").value;
+        const resultDiv = document.getElementById("result");
+
+        try {
+            const data = JSON.parse(jsonData);
+
+            if (Object.keys(data).length === 0) {
+                resultDiv.textContent = "JSON 数据为空，无法生成表结构";
+                return;
+            }
+
+            let columns = [];
+            columns.push("`id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY");
+
+            for (const key in data) {
+                const value = data[key];
+                let columnType;
+                if (typeof value === "string") {
+                    columnType = "VARCHAR(255)"; // 字符串类型长度增加
+                } else if (typeof value === "number") {
+                    if (Number.isInteger(value)) {
+                        columnType = "INT(11)";
+                    } else {
+                        columnType = "DECIMAL(10,2)";
+                    }
+                } else if (typeof value === "boolean") {
+                    columnType = "BOOLEAN"; // 使用更合适的 BOOLEAN 类型
+                } else if (Array.isArray(value)) { // 明确检查数组
+                    columnType = "JSON"; // 使用 JSON 类型存储数组
+                } else if (typeof value === "object" && value !== null) {
+                    columnType = "JSON"; // 使用 JSON 类型存储对象
+                } else if (value === null) {
+                    columnType = "VARCHAR(255) NULL";
+                } else {
+                    columnType = "VARCHAR(255)";
+                }
+                columns.push(`\`${key}\` ${columnType}`);
+            }
+
+            columns.push("`created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+            columns.push("`updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
+            const createTableSQL = `CREATE TABLE \`${tableName}\` (\n${columns.join(",\n")}\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+            resultDiv.textContent = createTableSQL;
+
+        } catch (error) {
+            resultDiv.textContent = `错误: ${error.message}`;
+        }
+    }
+</script>
+
+<!-- ===================================================content  end======================================================== -->
+
+<footer>
+    <p>&copy; 2025 JSON Tools</p>
+</footer>
+<!-- ===================================================content js start======================================================== -->
+<script>
+    function generateSQL() {
+        const tableName = document.getElementById("tableName").value;
+        const jsonData = document.getElementById("jsonData").value;
+        const resultDiv = document.getElementById("result");
+
+        try {
+            const data = JSON.parse(jsonData);
+
+            if (Object.keys(data).length === 0) {
+                resultDiv.textContent = "JSON 数据为空，无法生成表结构";
+                return;
+            }
+
+            let columns = [];
+            columns.push("`id` INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY");
+
+            for (const key in data) {
+                const value = data[key];
+                let columnType;
+                if (typeof value === "string") {
+                    columnType = "VARCHAR(255)"; // 字符串类型长度增加
+                } else if (typeof value === "number") {
+                    if (Number.isInteger(value)) {
+                        columnType = "INT(11)";
+                    } else {
+                        columnType = "DECIMAL(10,2)";
+                    }
+                } else if (typeof value === "boolean") {
+                    columnType = "BOOLEAN"; // 使用更合适的 BOOLEAN 类型
+                } else if (Array.isArray(value)) { // 明确检查数组
+                    columnType = "JSON"; // 使用 JSON 类型存储数组
+                } else if (typeof value === "object" && value !== null) {
+                    columnType = "JSON"; // 使用 JSON 类型存储对象
+                } else if (value === null) {
+                    columnType = "VARCHAR(255) NULL";
+                } else {
+                    columnType = "VARCHAR(255)";
+                }
+                columns.push(`\`${key}\` ${columnType}`);
+            }
+
+            columns.push("`created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP");
+            columns.push("`updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
+            const createTableSQL = `CREATE TABLE \`${tableName}\` (\n${columns.join(",\n")}\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`;
+            resultDiv.textContent = createTableSQL;
+
+        } catch (error) {
+            resultDiv.textContent = `错误: ${error.message}`;
+        }
+    }
+</script>
+<!-- ===================================================content js end======================================================== -->
+
+
+<script>
+    const inputJson = document.getElementById('inputJson');
+    const outputJson = document.getElementById('outputJson');
+    const navLinks = document.querySelectorAll('nav a'); // 获取所有导航链接
+
+    inputJson.addEventListener('input', () => {
+        try {
+            const parsedJson = JSON.parse(inputJson.value);
+            outputJson.value = JSON.stringify(parsedJson, null, 4); // 格式化 JSON，缩进 4 个空格
+        } catch (error) {
+            outputJson.value = "JSON 格式错误";
+        }
+    });
+
+    // 导航链接激活状态
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            navLinks.forEach(otherLink => otherLink.classList.remove('active')); // 移除其他链接的激活状态
+            link.classList.add('active'); // 给当前链接添加激活状态
+        });
+    });
+</script>
+
+</body>
+</html>
