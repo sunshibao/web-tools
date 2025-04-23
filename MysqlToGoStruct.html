@@ -12,26 +12,26 @@
         display: flex;
         flex-direction: column;
         min-height: 100vh;
-        background-color: #f0f0f0; /* 页面背景色，使白色区域更突出 */
+        background-color: #f0f0f0;
     }
 
     /* 头部样式 */
     header {
-        background-color: transparent; /* header 背景透明，以便显示子元素的背景色 */
-        border-bottom: none; /* 移除 header 的底部边框 */
+        background-color: transparent;
+        border-bottom: none;
     }
 
     .logo-bar {
-        background-color: white; /* LOGO 栏背景白色 */
+        background-color: white;
         padding: 10px 30px;
-        border-bottom: 1px solid #ccc; /* LOGO 栏底部边框 */
+        border-bottom: 1px solid #ccc;
     }
 
     .menu-bar {
-        background-color: white; /* 菜单栏背景白色 */
+        background-color: white;
         padding: 10px 20px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 菜单栏顶部阴影 */
-        border-bottom: 1px solid #ccc; /* 菜单栏底部边框 */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid #ccc;
     }
 
     .logo {
@@ -62,7 +62,6 @@
         background-color: #008000;
         color: white;
     }
-
 
     .panel-container {
         display: flex;
@@ -103,7 +102,7 @@
 <style>
     h1 {
         text-align: left;
-        padding: 0px 25px; /* 为标题添加一些垂直 padding */
+        padding: 0px 25px;
     }
 
     .container {
@@ -182,12 +181,12 @@
 </header>
 <!-- ===================================================content start======================================================== -->
 
-<h1>JSON To Go Struct</h1>
+<h1>MySQL To Go Struct</h1>
 
 <div class="container">
     <div class="left-panel">
-        <label for="jsonData">JSON 数据:</label><br>
-        <textarea id="jsonData" placeholder="Paste your CREATE TABLE statement here..."></textarea><br>
+        <label for="sqlData">MySQL 表结构:</label><br>
+        <textarea id="sqlData" placeholder="Paste your CREATE TABLE statement here..."></textarea><br>
 
         <button onclick="convert()">生成 Go Struct</button>
     </div>
@@ -205,9 +204,9 @@
 <!-- ===================================================content js start======================================================== -->
 <script>
     function convert() {
-        const sql = document.getElementById("jsonData").value;
+        const sql = document.getElementById("sqlData").value;
         const resultDiv = document.getElementById("result");
-        resultDiv.textContent = ""; // Clear previous result
+        resultDiv.textContent = ""; // 清空之前的结果
 
         try {
             const tableNameMatch = sql.match(/CREATE TABLE `(\w+)`/i);
@@ -236,30 +235,18 @@
                     comment = commentMatch[1];
                 }
 
-                let goType = "interface{}";
-                switch (mysqlType) {
-                    case "INT(11)":
-                    case "INT":
-                    case "TINYINT":
-                    case "SMALLINT":
-                    case "MEDIUMINT":
-                        goType = "int64";
-                        break;
-                    case "VARCHAR(255)":
-                    case "VARCHAR":
-                    case "TEXT":
-                        goType = "string";
-                        break;
-                    case "TIMESTAMP":
-                    case "DATETIME":
-                        goType = "time.Time";
-                        break;
-                    case "INT(3)":
-                        goType = "int64";
-                        break;
+                // 将字段名转换为驼峰格式
+                const camelCaseName = columnName.split("_").map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1)).join("");
+
+                // 统一处理字符类型为 string
+                let goType = "string";
+                if (mysqlType.includes("INT") || mysqlType.includes("TINYINT") || mysqlType.includes("SMALLINT") || mysqlType.includes("MEDIUMINT")) {
+                    goType = "int64";
+                } else if (mysqlType.includes("TIMESTAMP") || mysqlType.includes("DATETIME")) {
+                    goType = "time.Time";
                 }
 
-                structFields.push(`\t${columnName.charAt(0).toUpperCase() + columnName.slice(1)} ${goType} \`json:"${columnName}" gorm:"${columnName}"\` // ${comment}`);
+                structFields.push(`\t${camelCaseName.charAt(0).toUpperCase() + camelCaseName.slice(1)} ${goType} \`json:"${camelCaseName}" gorm:"${columnName}"\` // ${comment}`);
             }
 
             const goCode = `// ${structName} undefined
@@ -278,31 +265,6 @@ func (*${structName}) TableName() string {
         }
     }
 </script>
-
-
 <!-- ===================================================content js end======================================================== -->
-<script>
-    const inputJson = document.getElementById('inputJson');
-    const outputJson = document.getElementById('outputJson');
-    const navLinks = document.querySelectorAll('nav a'); // 获取所有导航链接
-
-    inputJson.addEventListener('input', () => {
-        try {
-            const parsedJson = JSON.parse(inputJson.value);
-            outputJson.value = JSON.stringify(parsedJson, null, 4); // 格式化 JSON，缩进 4 个空格
-        } catch (error) {
-            outputJson.value = "JSON 格式错误";
-        }
-    });
-
-    // 导航链接激活状态
-    navLinks.forEach(link => {
-        link.addEventListener('click', (event) => {
-            navLinks.forEach(otherLink => otherLink.classList.remove('active')); // 移除其他链接的激活状态
-            link.classList.add('active'); // 给当前链接添加激活状态
-        });
-    });
-</script>
-
 </body>
 </html>
