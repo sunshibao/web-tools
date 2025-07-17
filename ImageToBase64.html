@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tools 工具箱</title>
+</head>
+<style>
+    body {
+        font-family: sans-serif;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        background-color: #f0f0f0; /* 页面背景色，使白色区域更突出 */
+    }
+
+    /* 头部样式 */
+    header {
+        background-color: transparent; /* header 背景透明，以便显示子元素的背景色 */
+        border-bottom: none; /* 移除 header 的底部边框 */
+    }
+
+    .logo-bar {
+        background-color: white; /* LOGO 栏背景白色 */
+        padding: 10px 30px;
+        border-bottom: 1px solid #ccc; /* LOGO 栏底部边框 */
+    }
+
+    .menu-bar {
+        background-color: white; /* 菜单栏背景白色 */
+        padding: 10px 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 菜单栏顶部阴影 */
+        border-bottom: 1px solid #ccc; /* 菜单栏底部边框 */
+    }
+
+    .logo {
+        font-size: 1.3em;
+        font-weight: bold;
+    }
+
+    nav ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    nav li {
+        margin: 0 10px;
+    }
+
+    nav a {
+        text-decoration: none;
+        color: #333;
+        padding: 5px 10px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    nav a:hover, nav a.active {
+        background-color: #008000;
+        color: white;
+    }
+
+
+    .panel-container {
+        display: flex;
+        flex-grow: 1;
+    }
+
+    .left-panel, .right-panel {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin: 5px;
+        box-sizing: border-box;
+        overflow: auto;
+    }
+
+    textarea {
+        width: calc(100% - 10px);
+        height: 300px;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        box-sizing: border-box;
+        font-family: monospace;
+    }
+
+    /* 底部样式 */
+    footer {
+        background-color: white;
+        padding: 10px;
+        text-align: center;
+        border-top: 1px solid #ccc;
+        margin-top: 20px;
+    }
+</style>
+<!-- ===================================================content style start======================================================== -->
+
+<style>
+    h1 {
+        text-align: left;
+        padding: 0px 25px; /* 为标题添加一些垂直 padding */
+    }
+
+    .container {
+        display: flex;
+        flex-grow: 1;
+        padding: 20px;
+    }
+
+    .left-panel, .right-panel {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+        margin: 5px;
+        box-sizing: border-box;
+        overflow: auto;
+    }
+
+    textarea {
+        width: calc(100% - 10px);
+        height: 420px;
+        margin-bottom: 10px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    #result {
+        white-space: pre-wrap;
+        font-family: monospace;
+        border: 1px solid #ccc;
+        padding: 10px;
+        background-color: #ffffff;
+        overflow-x: auto;
+        height: calc(100% - 40px);
+        box-sizing: border-box;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    input[type="text"] {
+        width: calc(100% - 10px);
+        padding: 5px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        border: 1px solid #ccc;
+    }
+
+    button {
+        padding: 8px 16px;
+        background-color: #008000;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    button:hover {
+        background-color: #006600;
+    }
+
+    #previewImage {
+        max-width: 100%;
+        max-height: 400px;
+        margin-top: 10px;
+        border: 1px solid #ccc;
+        display: none;
+    }
+
+    .file-input-container {
+        margin-bottom: 15px;
+    }
+
+    .button-group {
+        margin-bottom: 15px;
+    }
+</style>
+<!-- ===================================================content style end======================================================== -->
+<body>
+
+<header>
+    <div class="logo-bar">
+        <div class="logo">Tools 工具箱</div>
+    </div>
+    <div class="menu-bar">
+        <nav>
+            <ul>
+                <li><a href="JsonToMysql.html">JSON To MySQL</a></li>
+                <li><a href="JsonToGoStruct.html">JSON To GoStruct</a></li>
+                <li><a href="MysqlToGoStruct.html">MySQL To GoStruct</a></li>
+                <li><a href="JsonToProtobuf.html">JSON To Protobuf</a></li>
+                <li><a href="XMLToJson.html">XML / JSON</a></li>
+                <li><a href="http://blog.skill86.com/editor">Editor Tool</a></li>
+                <li><a href="ImageToBase64.html"  class="active">Base64 / 图片互转</a></li>
+                <li><a href="#">其他工具</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+<!-- ===================================================content start======================================================== -->
+
+<h1>Base64 图片转换工具</h1>
+<div class="container">
+    <div class="left-panel">
+        <div class="file-input-container">
+            <label for="base64Input">Base64 编码:</label>
+            <textarea id="base64Input" placeholder="在此粘贴图片的Base64编码或上传图片自动获取Base64编码"></textarea>
+        </div>
+
+        <div class="button-group">
+            <button onclick="convertToImage()">转换为图片</button>
+            <button onclick="clearAll()">清空</button>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+            <button onclick="document.getElementById('fileInput').click()">上传图片</button>
+        </div>
+    </div>
+    <div class="right-panel">
+        <label>图片预览:</label>
+        <div id="result">
+            <img id="previewImage" alt="预览图片">
+            <p id="statusText">图片将在此处显示</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function convertToImage() {
+        const base64Input = document.getElementById("base64Input").value.trim();
+        const previewImage = document.getElementById("previewImage");
+        const statusText = document.getElementById("statusText");
+        
+        if (!base64Input) {
+            statusText.textContent = "请输入Base64编码";
+            previewImage.style.display = "none";
+            return;
+        }
+
+        try {
+            // 检查是否是完整的data URL格式
+            if (!base64Input.startsWith("data:image/")) {
+                // 如果不是，假设它是纯Base64数据，添加默认的image/jpeg前缀
+                previewImage.src = "data:image/jpeg;base64," + base64Input;
+            } else {
+                previewImage.src = base64Input;
+            }
+            
+            previewImage.style.display = "block";
+            statusText.textContent = "图片预览:";
+        } catch (error) {
+            statusText.textContent = "转换失败: " + error.message;
+            previewImage.style.display = "none";
+        }
+    }
+
+    function clearAll() {
+        document.getElementById("base64Input").value = "";
+        document.getElementById("previewImage").src = "";
+        document.getElementById("previewImage").style.display = "none";
+        document.getElementById("statusText").textContent = "图片将在此处显示";
+    }
+
+    function handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Input = document.getElementById("base64Input");
+            base64Input.value = e.target.result;
+            
+            // 自动显示图片
+            const previewImage = document.getElementById("previewImage");
+            previewImage.src = e.target.result;
+            previewImage.style.display = "block";
+            document.getElementById("statusText").textContent = "图片预览:";
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // 允许拖放文件到文本区域
+    document.getElementById("base64Input").addEventListener("dragover", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.border = "2px dashed #008000";
+    });
+
+    document.getElementById("base64Input").addEventListener("dragleave", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.border = "1px solid #ccc";
+    });
+
+    document.getElementById("base64Input").addEventListener("drop", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.style.border = "1px solid #ccc";
+        
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        
+        if (file.type.startsWith("image/")) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById("base64Input").value = e.target.result;
+                
+                // 自动显示图片
+                const previewImage = document.getElementById("previewImage");
+                previewImage.src = e.target.result;
+                previewImage.style.display = "block";
+                document.getElementById("statusText").textContent = "图片预览:";
+            };
+            reader.readAsDataURL(file);
+        } else {
+            alert("请拖放图片文件");
+        }
+    });
+</script>
+
+<!-- ===================================================content  end======================================================== -->
+
+<footer>
+    <p>&copy; 2025 Tools 工具箱</p>
+</footer>
+
+<script>
+    const navLinks = document.querySelectorAll('nav a'); // 获取所有导航链接
+
+    // 导航链接激活状态
+    navLinks.forEach(link => {
+        link.addEventListener('click', (event) => {
+            navLinks.forEach(otherLink => otherLink.classList.remove('active')); // 移除其他链接的激活状态
+            link.classList.add('active'); // 给当前链接添加激活状态
+        });
+    });
+</script>
+
+</body>
+</html>
