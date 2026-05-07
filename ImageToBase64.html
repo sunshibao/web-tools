@@ -14,6 +14,22 @@
             display: none;
         }
 
+        .url-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .url-row input[type="text"] {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .url-row button {
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
         .file-input-container {
             margin-bottom: 12px;
         }
@@ -33,7 +49,10 @@
     <div class="left-panel">
         <div class="file-input-container">
             <label for="imageUrl">图片链接 (URL):</label>
-            <input type="text" id="imageUrl" placeholder="粘贴图片链接，例如 https://example.com/pic.png">
+            <div class="url-row">
+                <input type="text" id="imageUrl" placeholder="粘贴图片链接，例如 https://example.com/pic.png">
+                <button class="primary" onclick="convertFromUrl()">链接转 Base64</button>
+            </div>
         </div>
 
         <div class="file-input-container">
@@ -42,7 +61,6 @@
         </div>
 
         <div class="button-group">
-            <button class="primary" onclick="convertFromUrl()">从链接转换</button>
             <button onclick="convertToImage()">转换为图片</button>
             <button onclick="clearAll()">清空</button>
             <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
