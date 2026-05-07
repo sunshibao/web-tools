@@ -32,11 +32,17 @@
 <div class="container">
     <div class="left-panel">
         <div class="file-input-container">
+            <label for="imageUrl">图片链接 (URL):</label>
+            <input type="text" id="imageUrl" placeholder="粘贴图片链接，例如 https://example.com/pic.png">
+        </div>
+
+        <div class="file-input-container">
             <label for="base64Input">Base64 编码:</label>
             <textarea id="base64Input" placeholder="在此粘贴图片的Base64编码或上传图片自动获取Base64编码"></textarea>
         </div>
 
         <div class="button-group">
+            <button class="primary" onclick="convertFromUrl()">从链接转换</button>
             <button onclick="convertToImage()">转换为图片</button>
             <button onclick="clearAll()">清空</button>
             <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
@@ -94,9 +100,50 @@
 
     function clearAll() {
         document.getElementById("base64Input").value = "";
+        document.getElementById("imageUrl").value = "";
         document.getElementById("previewImage").src = "";
         document.getElementById("previewImage").style.display = "none";
         document.getElementById("statusText").textContent = "图片将在此处显示";
+    }
+
+    // 通过 URL 获取图片并转为 Base64
+    async function convertFromUrl() {
+        const url = document.getElementById("imageUrl").value.trim();
+        const statusText = document.getElementById("statusText");
+        const previewImage = document.getElementById("previewImage");
+
+        if (!url) {
+            statusText.textContent = "请输入图片链接";
+            return;
+        }
+        if (!/^https?:\/\//i.test(url)) {
+            statusText.textContent = "链接需以 http:// 或 https:// 开头";
+            return;
+        }
+
+        statusText.textContent = "正在拉取图片 ...";
+        previewImage.style.display = "none";
+
+        try {
+            const res = await fetch(url, { mode: "cors" });
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            const blob = await res.blob();
+            if (!blob.type.startsWith("image/")) {
+                throw new Error("返回的不是图片类型: " + (blob.type || "未知"));
+            }
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(reader.error || new Error("读取失败"));
+                reader.readAsDataURL(blob);
+            });
+            document.getElementById("base64Input").value = dataUrl;
+            previewImage.src = dataUrl;
+            previewImage.style.display = "block";
+            statusText.textContent = "图片预览:";
+        } catch (err) {
+            statusText.textContent = "拉取失败: " + err.message + "（可能为跨域限制，请换支持 CORS 的图片源或先下载再上传）";
+        }
     }
 
     function handleFileSelect(event) {
