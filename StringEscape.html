@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tools 工具箱 - 字符串转义</title>
+    <link rel="stylesheet" href="assets/common.css">
+    <style>
+        textarea {
+            width: 100%;
+            font-size: 13px;
+            padding: 8px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            border: 1px solid #008000;
+            background-color: #fff;
+            color: #008000;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background-color: #008000;
+            color: #fff;
+        }
+
+        button.primary {
+            background-color: #008000;
+            color: #fff;
+        }
+
+        button.primary:hover {
+            background-color: #006400;
+        }
+
+        .options {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 10px;
+            margin: 0 20px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .options label {
+            display: inline-block;
+            font-weight: normal;
+            margin-right: 15px;
+            margin-bottom: 5px;
+        }
+
+        .tips {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .status {
+            font-size: 12px;
+            color: #008000;
+            margin-left: 10px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h1>字符串转义工具</h1>
+
+<div class="options">
+    <label><input type="checkbox" id="optNewline" checked> 换行 \n</label>
+    <label><input type="checkbox" id="optCR" checked> 回车 \r</label>
+    <label><input type="checkbox" id="optTab" checked> 制表符 \t</label>
+    <label><input type="checkbox" id="optQuote" checked> 双引号 \"</label>
+    <label><input type="checkbox" id="optSingleQuote"> 单引号 \'</label>
+    <label><input type="checkbox" id="optBackslash" checked> 反斜杠 \\</label>
+    <label><input type="checkbox" id="optTrimBlankLines"> 移除空行</label>
+    <label><input type="checkbox" id="optOneLine"> 直接拼为一行（去掉换行）</label>
+    <div class="tips">提示：勾选"直接拼为一行"时，会把换行替换为空，不再转义为 \n（常用于需要把多行粘到单行场景）。</div>
+</div>
+
+<div class="container">
+    <div class="left-panel">
+        <label for="inputText">输入（原始文本）：</label>
+        <textarea id="inputText" placeholder="在这里粘贴带换行/制表符/引号的文本..."></textarea>
+        <div class="btn-group">
+            <button class="primary" onclick="doEscape()">转义 →</button>
+            <button onclick="clearInput()">清空</button>
+            <button onclick="pasteInput()">粘贴</button>
+            <button onclick="swapText()">⇅ 交换</button>
+        </div>
+    </div>
+    <div class="right-panel">
+        <label for="outputText">输出（转义后）：<span class="status" id="status"></span></label>
+        <textarea id="outputText" placeholder="转义结果将显示在这里..."></textarea>
+        <div class="btn-group">
+            <button class="primary" onclick="doUnescape()">← 反转义</button>
+            <button onclick="clearOutput()">清空</button>
+            <button onclick="copyOutput()">复制结果</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getOptions() {
+        return {
+            newline: document.getElementById('optNewline').checked,
+            cr: document.getElementById('optCR').checked,
+            tab: document.getElementById('optTab').checked,
+            quote: document.getElementById('optQuote').checked,
+            singleQuote: document.getElementById('optSingleQuote').checked,
+            backslash: document.getElementById('optBackslash').checked,
+            trimBlankLines: document.getElementById('optTrimBlankLines').checked,
+            oneLine: document.getElementById('optOneLine').checked
+        };
+    }
+
+    function setStatus(msg) {
+        const el = document.getElementById('status');
+        el.textContent = msg;
+        if (msg) {
+            setTimeout(() => { el.textContent = ''; }, 2000);
+        }
+    }
+
+    function doEscape() {
+        const input = document.getElementById('inputText').value;
+        const opt = getOptions();
+        let out = input;
+
+        if (opt.backslash) out = out.replace(/\\/g, '\\\\');
+
+        if (opt.trimBlankLines) {
+            out = out.split(/\r?\n/).filter(l => l.trim() !== '').join('\n');
+        }
+
+        if (opt.oneLine) {
+            out = out.replace(/\r\n|\r|\n/g, '');
+        } else {
+            if (opt.cr) out = out.replace(/\r/g, '\\r');
+            if (opt.newline) out = out.replace(/\n/g, '\\n');
+        }
+
+        if (opt.tab) out = out.replace(/\t/g, '\\t');
+        if (opt.quote) out = out.replace(/"/g, '\\"');
+        if (opt.singleQuote) out = out.replace(/'/g, "\\'");
+
+        document.getElementById('outputText').value = out;
+        setStatus('转义完成');
+    }
+
+    function doUnescape() {
+        const input = document.getElementById('outputText').value;
+        try {
+            const out = JSON.parse('"' + input.replace(/\\?"/g, '\\"').replace(/\r?\n/g, '\\n') + '"');
+            document.getElementById('inputText').value = out;
+            setStatus('反转义完成');
+        } catch (e) {
+            let out = input;
+            out = out.replace(/\\r/g, '\r')
+                .replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\"/g, '"')
+                .replace(/\\'/g, "'")
+                .replace(/\\\\/g, '\\');
+            document.getElementById('inputText').value = out;
+            setStatus('反转义完成（回退模式）');
+        }
+    }
+
+    function clearInput() { document.getElementById('inputText').value = ''; }
+    function clearOutput() { document.getElementById('outputText').value = ''; }
+
+    function swapText() {
+        const a = document.getElementById('inputText');
+        const b = document.getElementById('outputText');
+        const tmp = a.value; a.value = b.value; b.value = tmp;
+    }
+
+    async function pasteInput() {
+        try {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('inputText').value = text;
+            setStatus('已粘贴');
+        } catch (e) {
+            setStatus('粘贴失败，请手动粘贴');
+        }
+    }
+
+    async function copyOutput() {
+        const text = document.getElementById('outputText').value;
+        try {
+            await navigator.clipboard.writeText(text);
+            setStatus('已复制到剪贴板');
+        } catch (e) {
+            const ta = document.getElementById('outputText');
+            ta.select();
+            document.execCommand('copy');
+            setStatus('已复制');
+        }
+    }
+
+    document.getElementById('inputText').addEventListener('input', () => {
+        if (document.getElementById('inputText').value) doEscape();
+    });
+
+    document.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            if (document.getElementById('inputText').value) doEscape();
+        });
+    });
+</script>
+
+<script src="assets/common.js"></script>
+</body>
+</html>
