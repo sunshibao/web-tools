@@ -5,48 +5,13 @@
     <title>Tools 工具箱 - 字符串转义</title>
     <link rel="stylesheet" href="assets/common.css">
     <style>
-        textarea {
-            width: 100%;
-            font-size: 13px;
-            padding: 8px;
-        }
-
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        button {
-            border: 1px solid #008000;
-            background-color: #fff;
-            color: #008000;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        button:hover {
-            background-color: #008000;
-            color: #fff;
-        }
-
-        button.primary {
-            background-color: #008000;
-            color: #fff;
-        }
-
-        button.primary:hover {
-            background-color: #006400;
-        }
-
         .options {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            padding: 10px;
-            margin: 0 20px;
-            border-radius: 4px;
+            background-color: #fff;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 12px 16px;
+            margin: 0 20px 10px;
             font-size: 13px;
         }
 
@@ -59,18 +24,15 @@
 
         .tips {
             font-size: 12px;
-            color: #666;
+            color: var(--muted);
             margin-top: 5px;
         }
 
         .status {
             font-size: 12px;
-            color: #008000;
+            color: var(--brand);
             margin-left: 10px;
-        }
-
-        label {
-            font-weight: bold;
+            font-weight: normal;
         }
     </style>
 </head>
@@ -113,6 +75,8 @@
 </div>
 
 <script>
+    let outputIsSynced = true; // 标记右侧输出是否仍为自动生成，用户手动修改后不再自动覆盖
+
     function getOptions() {
         return {
             newline: document.getElementById('optNewline').checked,
@@ -157,41 +121,85 @@
         if (opt.singleQuote) out = out.replace(/'/g, "\\'");
 
         document.getElementById('outputText').value = out;
+        outputIsSynced = true;
         setStatus('转义完成');
     }
 
+    // 手写反转义，避免 JSON.parse 的预处理圈套问题
     function doUnescape() {
         const input = document.getElementById('outputText').value;
-        try {
-            const out = JSON.parse('"' + input.replace(/\\?"/g, '\\"').replace(/\r?\n/g, '\\n') + '"');
-            document.getElementById('inputText').value = out;
-            setStatus('反转义完成');
-        } catch (e) {
-            let out = input;
-            out = out.replace(/\\r/g, '\r')
-                .replace(/\\n/g, '\n')
-                .replace(/\\t/g, '\t')
-                .replace(/\\"/g, '"')
-                .replace(/\\'/g, "'")
-                .replace(/\\\\/g, '\\');
-            document.getElementById('inputText').value = out;
-            setStatus('反转义完成（回退模式）');
+        let out = '';
+        for (let i = 0; i < input.length; i++) {
+            if (input[i] === '\\' && i + 1 < input.length) {
+                const next = input[i + 1];
+                switch (next) {
+                    case 'n':  out += '\n'; i++; break;
+                    case 'r':  out += '\r'; i++; break;
+                    case 't':  out += '\t'; i++; break;
+                    case 'b':  out += '\b'; i++; break;
+                    case 'f':  out += '\f'; i++; break;
+                    case 'v':  out += '\v'; i++; break;
+                    case '0':  out += '\0'; i++; break;
+                    case '"':  out += '"';  i++; break;
+                    case "'":  out += "'";  i++; break;
+                    case '\\': out += '\\'; i++; break;
+                    case '/':  out += '/';  i++; break;
+                    case 'u': {
+                        const hex = input.substr(i + 2, 4);
+                        if (/^[0-9a-fA-F]{4}$/.test(hex)) {
+                            out += String.fromCharCode(parseInt(hex, 16));
+                            i += 5;
+                        } else {
+                            out += input[i];
+                        }
+                        break;
+                    }
+                    case 'x': {
+                        const hex = input.substr(i + 2, 2);
+                        if (/^[0-9a-fA-F]{2}$/.test(hex)) {
+                            out += String.fromCharCode(parseInt(hex, 16));
+                            i += 3;
+                        } else {
+                            out += input[i];
+                        }
+                        break;
+                    }
+                    default:
+                        // 未知转义序列原样保留
+                        out += input[i];
+                }
+            } else {
+                out += input[i];
+            }
         }
+        document.getElementById('inputText').value = out;
+        outputIsSynced = false; // 左侧被从右侧还原，避免再次自动覆盖右侧
+        setStatus('反转义完成');
     }
 
-    function clearInput() { document.getElementById('inputText').value = ''; }
-    function clearOutput() { document.getElementById('outputText').value = ''; }
+    function clearInput() {
+        document.getElementById('inputText').value = '';
+        document.getElementById('outputText').value = '';
+        outputIsSynced = true;
+    }
+    function clearOutput() {
+        document.getElementById('outputText').value = '';
+        outputIsSynced = true;
+    }
 
     function swapText() {
         const a = document.getElementById('inputText');
         const b = document.getElementById('outputText');
         const tmp = a.value; a.value = b.value; b.value = tmp;
+        outputIsSynced = false;
     }
 
     async function pasteInput() {
         try {
             const text = await navigator.clipboard.readText();
             document.getElementById('inputText').value = text;
+            outputIsSynced = true;
+            doEscape();
             setStatus('已粘贴');
         } catch (e) {
             setStatus('粘贴失败，请手动粘贴');
@@ -212,12 +220,18 @@
     }
 
     document.getElementById('inputText').addEventListener('input', () => {
-        if (document.getElementById('inputText').value) doEscape();
+        // 只有当右侧仍为自动生成时，才随输入同步
+        if (outputIsSynced) doEscape();
+    });
+
+    // 用户手动编辑右侧时，标记为非同步，防止左侧输入覆盖
+    document.getElementById('outputText').addEventListener('input', () => {
+        outputIsSynced = false;
     });
 
     document.querySelectorAll('.options input[type="checkbox"]').forEach(cb => {
         cb.addEventListener('change', () => {
-            if (document.getElementById('inputText').value) doEscape();
+            if (outputIsSynced && document.getElementById('inputText').value) doEscape();
         });
     });
 </script>

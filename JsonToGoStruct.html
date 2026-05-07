@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <title>Tools 工具箱 - JSON To GoStruct</title>
     <link rel="stylesheet" href="assets/common.css">
-    <style>
-        /* 页面特有：输入区更高 */
-        textarea { height: 510px; }
-    </style>
 </head>
 <body>
 
@@ -31,8 +27,16 @@
         const resultDiv = document.getElementById("result");
         try {
             const jsonData = JSON.parse(jsonDataText);
-            const goCode = generateGoStruct(jsonData);
-            resultDiv.textContent = goCode;
+            if (typeof jsonData !== 'object' || jsonData === null) {
+                resultDiv.textContent = "Invalid JSON: 需要对象或数组";
+                return;
+            }
+            const sample = Array.isArray(jsonData) ? jsonData[0] : jsonData;
+            if (!sample || typeof sample !== 'object') {
+                resultDiv.textContent = "Invalid JSON: 样本数据为空";
+                return;
+            }
+            resultDiv.textContent = generateGoStruct(sample);
         } catch (error) {
             resultDiv.textContent = "Invalid JSON: " + error.message;
         }
@@ -44,37 +48,38 @@
         for (const key in jsonData) {
             const value = jsonData[key];
             const fieldName = capitalize(key);
-            let fieldType = getGoType(value);
+            const fieldType = getGoType(value, key);
             goCode += `\t${fieldName} ${fieldType} \`json:"${key}"\`\n`;
         }
         goCode += "}\n\n";
 
         for (const key in jsonData) {
             const value = jsonData[key];
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
                 goCode += generateGoStruct(value, capitalize(key));
             }
-            if (Array.isArray(value) && value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
+            if (Array.isArray(value) && value.length > 0 && value[0] && typeof value[0] === 'object' && !Array.isArray(value[0])) {
                 goCode += generateGoStruct(value[0], capitalize(key));
             }
         }
         return goCode;
     }
 
-    function getGoType(value) {
-        if (typeof value === "string") {
-            return "string";
-        } else if (typeof value === "number") {
-            return Number.isInteger(value) ? "int" : "float64";
-        } else if (typeof value === "boolean") {
-            return "bool";
-        } else if (Array.isArray(value)) {
-            return value.length > 0 ? `[]${getGoType(value[0])}` : "[]any";
-        } else if (typeof value === "object" && value !== null) {
-            return capitalize(Object.keys(value)[0]);
-        } else {
-            return "any";
+    // key 为当前字段名，用于给嵌套对象/对象数组生成与外层一致的类型名
+    function getGoType(value, key) {
+        if (typeof value === "string") return "string";
+        if (typeof value === "number") return Number.isInteger(value) ? "int" : "float64";
+        if (typeof value === "boolean") return "bool";
+        if (Array.isArray(value)) {
+            if (value.length === 0) return "[]any";
+            const first = value[0];
+            if (first && typeof first === 'object' && !Array.isArray(first)) {
+                return `[]${capitalize(key)}`;
+            }
+            return `[]${getGoType(first, key)}`;
         }
+        if (value && typeof value === "object") return capitalize(key);
+        return "any";
     }
 
     function capitalize(str) {

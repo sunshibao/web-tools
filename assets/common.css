@@ -1,36 +1,59 @@
 /* ============== 全局公共样式（所有页面共享） ============== */
 
+:root {
+    --brand: #008000;
+    --brand-dark: #006400;
+    --brand-soft: #e6f2e6;
+    --border: #d0d0d0;
+    --border-soft: #e4e4e4;
+    --bg: #f5f5f5;
+    --panel-bg: #ffffff;
+    --text: #333;
+    --muted: #666;
+    --radius: 6px;
+    --radius-sm: 4px;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    --gap: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    color: var(--text);
     margin: 0;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-color: #f0f0f0;
+    background-color: var(--bg);
 }
 
-/* 头部 */
+/* ------- Header ------- */
 header {
     background-color: transparent;
     border-bottom: none;
 }
 
 .logo-bar {
-    background-color: white;
+    background-color: #fff;
     padding: 10px 30px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid var(--border-soft);
 }
 
 .menu-bar {
-    background-color: white;
+    background-color: #fff;
     padding: 10px 20px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid var(--border-soft);
 }
 
 .logo {
     font-size: 1.3em;
     font-weight: bold;
+    color: var(--text);
 }
 
 nav ul {
@@ -38,98 +61,181 @@ nav ul {
     margin: 0;
     padding: 0;
     display: flex;
+    flex-wrap: wrap;
 }
 
 nav li {
-    margin: 0 10px;
+    margin: 0 8px;
 }
 
 nav a {
     text-decoration: none;
-    color: #333;
-    padding: 5px 10px;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: background-color .2s ease, color .2s ease;
+    display: inline-block;
 }
 
 nav a:hover,
 nav a.active {
-    background-color: #008000;
-    color: white;
+    background-color: var(--brand);
+    color: #fff;
 }
 
-/* 底部 */
+/* ------- Footer ------- */
 footer {
-    background-color: white;
-    padding: 10px;
+    background-color: #fff;
+    padding: 12px;
     text-align: center;
-    border-top: 1px solid #ccc;
+    color: var(--muted);
+    border-top: 1px solid var(--border-soft);
     margin-top: 20px;
 }
 
-/* 通用内容区样式 */
+/* ------- 内容布局 ------- */
 h1 {
+    font-size: 1.4em;
+    font-weight: 600;
     text-align: left;
     padding: 0 25px;
+    margin: 20px 0 10px;
 }
 
 .container {
     display: flex;
     flex-grow: 1;
-    padding: 20px;
+    padding: 10px 20px 20px;
+    gap: var(--gap);
 }
 
 .panel-container {
     display: flex;
     flex-grow: 1;
+    gap: var(--gap);
 }
 
 .left-panel,
 .right-panel {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ccc;
-    margin: 5px;
-    box-sizing: border-box;
+    padding: 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: var(--radius);
+    margin: 0;
+    background-color: var(--panel-bg);
+    box-shadow: var(--shadow);
     overflow: auto;
-    background-color: #fff;
 }
 
-textarea {
-    width: calc(100% - 10px);
-    height: 420px;
-    margin-bottom: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    resize: vertical;
-    box-sizing: border-box;
-    font-family: monospace;
-}
-
+/* ------- 表单控件 ------- */
 label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: var(--text);
 }
 
 input[type="text"] {
-    width: calc(100% - 10px);
-    padding: 5px;
+    width: 100%;
+    padding: 8px 10px;
     margin-bottom: 10px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease;
 }
 
+input[type="text"]:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-soft);
+}
+
+textarea {
+    width: 100%;
+    height: 420px;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: #fff;
+    resize: vertical;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+textarea:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 2px var(--brand-soft);
+}
+
+/* ------- 按钮（统一风格） ------- */
 button {
     padding: 8px 16px;
+    font-size: 13px;
+    border: 1px solid var(--brand);
+    background-color: #fff;
+    color: var(--brand);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
 }
 
+button:hover {
+    background-color: var(--brand);
+    color: #fff;
+}
+
+button.primary,
+button[type="submit"] {
+    background-color: var(--brand);
+    color: #fff;
+}
+
+button.primary:hover,
+button[type="submit"]:hover {
+    background-color: var(--brand-dark);
+    border-color: var(--brand-dark);
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.btn-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+/* ------- 结果展示区 ------- */
 #result {
     white-space: pre-wrap;
-    font-family: monospace;
-    border: 1px solid #ccc;
-    padding: 10px;
-    background-color: #ffffff;
-    overflow-x: auto;
-    height: calc(100% - 40px);
+    word-break: break-all;
+    font-family: Menlo, Consolas, monospace;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    background-color: #fafafa;
+    overflow: auto;
+    min-height: 420px;
     box-sizing: border-box;
+}
+
+.error {
+    color: #c00;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid var(--border-soft);
+    margin: 12px 0;
 }

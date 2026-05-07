@@ -23,48 +23,113 @@
 </div>
 
 <script>
+    // 跳过索引/约束/外键等非列定义
+    const SKIP_PREFIX_RE = /^(PRIMARY\s+KEY|UNIQUE\s+KEY|UNIQUE\s+INDEX|KEY|INDEX|FULLTEXT|SPATIAL|CONSTRAINT|FOREIGN\s+KEY|CHECK)\b/i;
+
+    // 提取 CREATE TABLE 外层圆括号内的内容（支持嵌套括号）
+    function extractColumnsSection(sql) {
+        const start = sql.indexOf('(');
+        if (start < 0) return null;
+        let depth = 0;
+        for (let i = start; i < sql.length; i++) {
+            const ch = sql[i];
+            if (ch === '(') depth++;
+            else if (ch === ')') {
+                depth--;
+                if (depth === 0) return sql.substring(start + 1, i);
+            }
+        }
+        return null;
+    }
+
+    // 按顶层逗号切分列（忽略括号内部的逗号）
+    function splitColumns(str) {
+        const out = [];
+        let depth = 0;
+        let buf = '';
+        let quote = null;
+        for (let i = 0; i < str.length; i++) {
+            const ch = str[i];
+            if (quote) {
+                buf += ch;
+                if (ch === quote && str[i - 1] !== '\\') quote = null;
+                continue;
+            }
+            if (ch === "'" || ch === '"' || ch === '`') { quote = ch; buf += ch; continue; }
+            if (ch === '(') depth++;
+            else if (ch === ')') depth--;
+            if (ch === ',' && depth === 0) {
+                if (buf.trim()) out.push(buf.trim());
+                buf = '';
+            } else {
+                buf += ch;
+            }
+        }
+        if (buf.trim()) out.push(buf.trim());
+        return out;
+    }
+
     function convert() {
         const sql = document.getElementById("sqlData").value;
         const resultDiv = document.getElementById("result");
         resultDiv.textContent = "";
 
         try {
-            const tableNameMatch = sql.match(/CREATE TABLE `(\w+)`/i);
+            const tableNameMatch = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?(\w+)`?/i);
             if (!tableNameMatch) {
                 throw new Error("Invalid CREATE TABLE statement: Table name not found.");
             }
             const tableName = tableNameMatch[1];
             const structName = tableName.split("_").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join("");
 
-            const columnsMatch = sql.match(/\(([\s\S]+)\)/);
-            if (!columnsMatch) {
+            const columnsStr = extractColumnsSection(sql);
+            if (!columnsStr) {
                 throw new Error("Invalid CREATE TABLE statement: Columns not found.");
             }
-            const columnsStr = columnsMatch[1];
-            const columns = columnsStr.split(",\n").map(s => s.trim()).filter(s => s !== "");
+            const columns = splitColumns(columnsStr);
 
-            let structFields = [];
+            const structFields = [];
             for (const column of columns) {
-                if (column.startsWith("PRIMARY KEY")) continue;
-                const parts = column.split(/\s+/).filter(s => s !== "");
-                let columnName = parts[0].replace(/`/g, "");
-                let mysqlType = parts[1].toUpperCase();
-                let comment = "";
-                const commentMatch = column.match(/COMMENT '(.*?)'/);
-                if (commentMatch) {
-                    comment = commentMatch[1];
-                }
+                if (SKIP_PREFIX_RE.test(column)) continue;
 
+                // 取 `col_name` 或 col_name
+                const nameMatch = column.match(/^`?([A-Za-z_][\w]*)`?\s+([A-Za-z]+)/);
+                if (!nameMatch) continue;
+                const columnName = nameMatch[1];
+                const mysqlType = nameMatch[2].toUpperCase();
+
+                let comment = "";
+                const commentMatch = column.match(/COMMENT\s+'((?:[^'\\]|\\.)*)'/i);
+                if (commentMatch) comment = commentMatch[1];
+
+                const isUnsigned = /\bUNSIGNED\b/i.test(column);
+
+                // 字段名转驼峰
                 const camelCaseName = columnName.split("_").map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1)).join("");
+                const fieldName = camelCaseName.charAt(0).toUpperCase() + camelCaseName.slice(1);
 
                 let goType = "string";
-                if (mysqlType.includes("INT") || mysqlType.includes("TINYINT") || mysqlType.includes("SMALLINT") || mysqlType.includes("MEDIUMINT")) {
-                    goType = "int64";
-                } else if (mysqlType.includes("TIMESTAMP") || mysqlType.includes("DATETIME")) {
+                if (mysqlType === "TINYINT" || mysqlType === "BOOL" || mysqlType === "BOOLEAN") {
+                    goType = isUnsigned ? "uint8" : "int8";
+                } else if (mysqlType === "SMALLINT") {
+                    goType = isUnsigned ? "uint16" : "int16";
+                } else if (mysqlType === "MEDIUMINT" || mysqlType === "INT" || mysqlType === "INTEGER") {
+                    goType = isUnsigned ? "uint32" : "int32";
+                } else if (mysqlType === "BIGINT") {
+                    goType = isUnsigned ? "uint64" : "int64";
+                } else if (mysqlType === "FLOAT") {
+                    goType = "float32";
+                } else if (mysqlType === "DOUBLE" || mysqlType === "DECIMAL" || mysqlType === "NUMERIC") {
+                    goType = "float64";
+                } else if (mysqlType === "TIMESTAMP" || mysqlType === "DATETIME" || mysqlType === "DATE" || mysqlType === "TIME") {
                     goType = "time.Time";
+                } else if (mysqlType === "JSON") {
+                    goType = "string";
+                } else if (mysqlType.includes("BLOB") || mysqlType === "BINARY" || mysqlType === "VARBINARY") {
+                    goType = "[]byte";
                 }
 
-                structFields.push(`\t${camelCaseName.charAt(0).toUpperCase() + camelCaseName.slice(1)} ${goType} \`json:"${camelCaseName}" gorm:"${columnName}"\` // ${comment}`);
+                structFields.push(`\t${fieldName} ${goType} \`json:"${camelCaseName}" gorm:"${columnName}"\`${comment ? " // " + comment : ""}`);
             }
 
             const goCode = `// ${structName} undefined

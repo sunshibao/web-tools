@@ -7,7 +7,7 @@
         { href: 'MysqlToGoStruct.html',  text: 'MySQL To GoStruct' },
         { href: 'JsonToProtobuf.html',   text: 'JSON To Protobuf' },
         { href: 'XMLToJson.html',        text: 'XML / JSON' },
-        { href: 'http://blog.skill86.com/editor', text: 'Editor Tool' },
+        { href: 'http://blog.skill86.com/editor', text: 'Editor Tool', target: '_blank' },
         { href: 'ImageToBase64.html',    text: 'Base64 / 图片互转' },
         { href: 'StringEscape.html',     text: '字符串转义' },
         { href: '#',                     text: '其他工具' }
@@ -33,7 +33,8 @@
         const items = SITE_NAV.map(item => {
             const isActive = item.href === cur;
             const cls = isActive ? ' class="active"' : '';
-            return `<li><a href="${item.href}"${cls}>${item.text}</a></li>`;
+            const target = item.target ? ` target="${item.target}" rel="noopener noreferrer"` : '';
+            return `<li><a href="${item.href}"${cls}${target}>${item.text}</a></li>`;
         }).join('\n                ');
 
         return `
@@ -58,20 +59,9 @@
 </footer>`;
     }
 
-    function bindNavActive() {
-        const links = document.querySelectorAll('nav a');
-        links.forEach(link => {
-            link.addEventListener('click', () => {
-                links.forEach(o => o.classList.remove('active'));
-                link.classList.add('active');
-            });
-        });
-    }
-
     function init() {
         document.body.insertAdjacentHTML('afterbegin', buildHeader());
         document.body.insertAdjacentHTML('beforeend', buildFooter());
-        bindNavActive();
     }
 
     if (document.readyState === 'loading') {

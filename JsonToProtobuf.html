@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <title>Tools 工具箱 - JSON To Protobuf</title>
     <link rel="stylesheet" href="assets/common.css">
-    <style>
-        textarea { height: 510px; }
-        .error { color: #c00; margin-top: 8px; }
-    </style>
 </head>
 <body>
 
@@ -26,6 +22,19 @@
 </div>
 
 <script>
+    function scalarType(v, ctx) {
+        if (v === null) {
+            ctx.needAny = true;
+            return "google.protobuf.Any";
+        }
+        switch (typeof v) {
+            case 'string':  return 'string';
+            case 'number':  return Number.isInteger(v) ? 'int32' : 'double';
+            case 'boolean': return 'bool';
+            default:        return 'string';
+        }
+    }
+
     function generateProtobuf() {
         const jsonData = document.getElementById("jsonData").value;
         const resultDiv = document.getElementById("result");
@@ -34,68 +43,66 @@
         errorMessageDiv.textContent = "";
 
         try {
-            const jsonObject = JSON.parse(jsonData);
-            let messageName = "SomeMessage";
-            let protobuf = `syntax = "proto3";\n\n`;
-            let messageDefinitions = {};
+            const parsed = JSON.parse(jsonData);
+            if (!parsed || typeof parsed !== 'object') {
+                throw new Error("需要对象或对象数组");
+            }
+            const sample = Array.isArray(parsed) ? parsed[0] : parsed;
+            if (!sample || typeof sample !== 'object') {
+                throw new Error("样本数据为空");
+            }
+
+            const ctx = { needAny: false };
+            const messageName = "SomeMessage";
+            const messageDefinitions = {};
 
             function convertJsonToProtobuf(obj, name) {
                 let messageBody = "";
-                for (const key in obj) {
+                const keys = Object.keys(obj);
+                keys.forEach((key, idx) => {
+                    const value = obj[key];
+                    const isRepeated = Array.isArray(value);
                     let type;
-                    let value = obj[key];
-                    let isRepeated = Array.isArray(value);
-                    let nestedMessageName = "";
 
-                    if (typeof value === 'object' && value !== null && !isRepeated) {
-                        nestedMessageName = name + "_" + key.charAt(0).toUpperCase() + key.slice(1);
-                        if (!messageDefinitions[nestedMessageName]) {
-                            messageDefinitions[nestedMessageName] = convertJsonToProtobuf(value, nestedMessageName);
+                    if (value && typeof value === 'object' && !isRepeated) {
+                        const nested = name + "_" + key.charAt(0).toUpperCase() + key.slice(1);
+                        if (!messageDefinitions[nested]) {
+                            messageDefinitions[nested] = convertJsonToProtobuf(value, nested);
                         }
-                        type = nestedMessageName;
+                        type = nested;
                     } else if (isRepeated) {
-                        if (value.length > 0 && typeof value[0] === 'object' && value[0] !== null) {
-                            nestedMessageName = name + "_" + key.charAt(0).toUpperCase() + key.slice(1);
-                            if (!messageDefinitions[nestedMessageName]) {
-                                messageDefinitions[nestedMessageName] = convertJsonToProtobuf(value[0], nestedMessageName);
+                        const first = value[0];
+                        if (first && typeof first === 'object' && !Array.isArray(first)) {
+                            const nested = name + "_" + key.charAt(0).toUpperCase() + key.slice(1);
+                            if (!messageDefinitions[nested]) {
+                                messageDefinitions[nested] = convertJsonToProtobuf(first, nested);
                             }
-                            type = nestedMessageName;
+                            type = nested;
+                        } else if (value.length === 0) {
+                            type = 'string'; // 空数组无法推断，默认 string
                         } else {
-                            switch (typeof value[0]) {
-                                case 'string':  type = 'string'; break;
-                                case 'number':  type = Number.isInteger(value[0]) ? 'int32' : 'double'; break;
-                                case 'boolean': type = 'bool'; break;
-                                case 'null':
-                                    type = "google.protobuf.Any";
-                                    protobuf = `syntax = "proto3";\nimport "google/protobuf/any.proto";\n\n`;
-                                    break;
-                                default: type = 'string';
-                            }
+                            type = scalarType(first, ctx);
                         }
                     } else {
-                        switch (typeof value) {
-                            case 'string':  type = 'string'; break;
-                            case 'number':  type = Number.isInteger(value) ? 'int32' : 'double'; break;
-                            case 'boolean': type = 'bool'; break;
-                            case 'null':
-                                type = "google.protobuf.Any";
-                                protobuf = `syntax = "proto3";\nimport "google/protobuf/any.proto";\n\n`;
-                                break;
-                            default: type = 'string';
-                        }
+                        type = scalarType(value, ctx);
                     }
-                    messageBody += `\t${isRepeated ? "repeated " : ""}${type} ${key} = ${Object.keys(obj).indexOf(key) + 1};\n`;
-                }
+                    messageBody += `\t${isRepeated ? "repeated " : ""}${type} ${key} = ${idx + 1};\n`;
+                });
                 return messageBody;
             }
 
-            let mainMessageBody = convertJsonToProtobuf(jsonObject, messageName);
+            const mainBody = convertJsonToProtobuf(sample, messageName);
+
+            let protobuf = `syntax = "proto3";\n`;
+            if (ctx.needAny) {
+                protobuf += `import "google/protobuf/any.proto";\n`;
+            }
+            protobuf += `\n`;
 
             for (const msg in messageDefinitions) {
-                protobuf += `message ${msg} {\n${messageDefinitions[msg]}\n}\n\n`;
+                protobuf += `message ${msg} {\n${messageDefinitions[msg]}}\n\n`;
             }
-
-            protobuf += `message ${messageName} {\n${mainMessageBody}\n}\n`;
+            protobuf += `message ${messageName} {\n${mainBody}}\n`;
 
             resultDiv.textContent = protobuf;
         } catch (error) {

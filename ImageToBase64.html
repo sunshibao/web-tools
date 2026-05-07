@@ -5,32 +5,24 @@
     <title>Tools 工具箱 - Base64 / 图片互转</title>
     <link rel="stylesheet" href="assets/common.css">
     <style>
-        button {
-            background-color: #008000;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-        button:hover {
-            background-color: #006600;
-        }
-
         #previewImage {
             max-width: 100%;
-            max-height: 400px;
+            max-height: 420px;
             margin-top: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-sm);
             display: none;
         }
 
         .file-input-container {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .button-group {
-            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
         }
     </style>
 </head>
@@ -61,6 +53,18 @@
 </div>
 
 <script>
+    // 根据 base64 头部嵌格嵌型只识别常见图片类型
+    function detectMimeType(base64) {
+        if (base64.startsWith('iVBORw0KGgo')) return 'image/png';
+        if (base64.startsWith('/9j/')) return 'image/jpeg';
+        if (base64.startsWith('R0lGOD')) return 'image/gif';
+        if (base64.startsWith('UklGR')) return 'image/webp';
+        if (base64.startsWith('Qk')) return 'image/bmp';
+        if (base64.startsWith('PHN2Zy') || base64.startsWith('PD94bWw')) return 'image/svg+xml';
+        if (base64.startsWith('AAABAA')) return 'image/x-icon';
+        return 'image/jpeg';
+    }
+
     function convertToImage() {
         const base64Input = document.getElementById("base64Input").value.trim();
         const previewImage = document.getElementById("previewImage");
@@ -74,7 +78,8 @@
 
         try {
             if (!base64Input.startsWith("data:image/")) {
-                previewImage.src = "data:image/jpeg;base64," + base64Input;
+                const mime = detectMimeType(base64Input);
+                previewImage.src = `data:${mime};base64,` + base64Input;
             } else {
                 previewImage.src = base64Input;
             }

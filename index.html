@@ -31,7 +31,20 @@
         const resultDiv = document.getElementById("result");
 
         try {
-            const data = JSON.parse(jsonData);
+            let data = JSON.parse(jsonData);
+
+            if (Array.isArray(data)) {
+                if (data.length === 0 || typeof data[0] !== 'object' || data[0] === null || Array.isArray(data[0])) {
+                    resultDiv.textContent = "JSON 数组需包含至少一个对象元素";
+                    return;
+                }
+                data = data[0];
+            }
+
+            if (!data || typeof data !== 'object') {
+                resultDiv.textContent = "JSON 需要为对象或对象数组";
+                return;
+            }
 
             if (Object.keys(data).length === 0) {
                 resultDiv.textContent = "JSON 数据为空，无法生成表结构";

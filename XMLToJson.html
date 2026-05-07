@@ -5,19 +5,19 @@
     <title>Tools 工具箱 - XML / JSON</title>
     <link rel="stylesheet" href="assets/common.css">
     <style>
-        textarea { height: 510px; }
-        #result { /* 这里的 #result 实际是一个 textarea，保留 common 中 textarea 样式 */ }
         #xmlResult, #jsonResult {
             white-space: pre-wrap;
-            font-family: monospace;
-            border: 1px solid #ccc;
-            padding: 10px;
-            background-color: #ffffff;
-            overflow-x: auto;
-            min-height: 200px;
+            word-break: break-all;
+            font-family: Menlo, Consolas, monospace;
+            font-size: 13px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            background-color: #fafafa;
+            overflow: auto;
+            min-height: 260px;
             box-sizing: border-box;
         }
-        .error { color: #c00; }
     </style>
 </head>
 <body>
@@ -94,10 +94,10 @@
                 }
             }
             if (xml.textContent && xml.childNodes.length === 0 && xml.textContent.trim() !== "") {
-                return xml.textContent.trim();
+                return xml.textContent;
             }
         } else if (xml.nodeType == 3) {
-            return xml.nodeValue.trim();
+            return xml.nodeValue;
         }
         return obj;
     }
